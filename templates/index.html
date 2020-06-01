@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block title %}
+	MainPage
+{% endblock %}
+
+{% block body %}
+<div class="container">
+
+	<h1>Welcome!</h1>
+
+	<h2 style="color: grey;">Registration</h2>
+	{% if result=="unsuccess" %}
+	   <div class='alert alert-warning' role='alert' style='text-align: center;'>{{ issue }}</div>
+	{% elif result=="success" %}
+		<div class='alert alert-primary' role='alert' style='text-align: center;'>{{ issue }}</div>
+  {% endif %}
+	
+	<form id="registration" action="{{ url_for('register') }}" method="post">
+<div class="form-group">
+    <label for="exampleInputEmail1">Username</label>
+    <input type="username" class="form-control" name="inputusername" aria-describedby="emailHelp" placeholder="Enter username">
+    <small id="usernameHelp" class="form-text text-muted">We only take unique username.</small>
+  </div>
+  <div class="form-group">
+    <label for="exampleInputEmail1">Email address</label>
+    <input type="email" class="form-control" name="inputemail" aria-describedby="emailHelp" placeholder="Enter email">
+    <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
+  </div>
+  <div class="form-group">
+    <label for="exampleInputPassword1">Password</label>
+    <input type="password" class="form-control" name="inputpassword" placeholder="Enter password">
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+	</form>
+
+	<h2 style="color: grey;">Login</h2>
+
+
+</div>
+
+{% endblock %}
