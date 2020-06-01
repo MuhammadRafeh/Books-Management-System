@@ -33,6 +33,7 @@ def register():
 	user_exist = db.execute('SELECT * FROM users WHERE username = :inputusername',{'inputusername':inputusername}).fetchone()
 	if not(user_exist is None):
 		return render_template('index.html', issue="Username Already Exists!", result="unsuccess")
+
 	"""Handling Email Section"""
 	inputemail = request.form.get('inputemail')
 	email_exist = db.execute('SELECT * FROM users WHERE email = :inputemail',{'inputemail':inputemail}).fetchone()
@@ -44,5 +45,12 @@ def register():
 		if result['status']!=1: #If equal to 1 it's mean that Email is ok/exists
 			return render_template("index.html", issue='Invalid Email Address!', result="unsuccess")
 
+	"""Fetching the Password"""
+	inputpassword = request.form.get('inputpassword')
 
+	"""Inserting data into the Database"""
+	db.execute("INSERT INTO users (username, email, password) VALUES (:inputusername, :inputemail, :inputpassword)",{
+		'inputusername':inputusername, 'inputemail': inputemail, 'inputpassword':inputpassword
+		})
+	db.commit()
 	return render_template('index.html', issue="Registered Successfully!", result='success')
