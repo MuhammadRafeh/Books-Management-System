@@ -28,14 +28,17 @@ def index():
 
 @app.route("/registration", methods=['POST'])
 def register():
-	"""Handing Username Section"""
+	"""Fetching all the Inputs"""
 	inputusername = request.form.get('inputusername')
+	inputemail = request.form.get('inputemail')
+	inputpassword = request.form.get('inputpassword')
+
+	"""Handing Username Section"""
 	user_exist = db.execute('SELECT * FROM users WHERE username = :inputusername',{'inputusername':inputusername}).fetchone()
 	if not(user_exist is None):
 		return render_template('index.html', issue="Username Already Exists!", result="unsuccess")
 
 	"""Handling Email Section"""
-	inputemail = request.form.get('inputemail')
 	email_exist = db.execute('SELECT * FROM users WHERE email = :inputemail',{'inputemail':inputemail}).fetchone()
 	if not(email_exist is None):
 		return render_template('index.html', issue="Email Already Exists!", result="unsuccess")
@@ -45,12 +48,28 @@ def register():
 		if result['status']!=1: #If equal to 1 it's mean that Email is ok/exists
 			return render_template("index.html", issue='Invalid Email Address!', result="unsuccess")
 
-	"""Fetching the Password"""
-	inputpassword = request.form.get('inputpassword')
-
 	"""Inserting data into the Database"""
 	db.execute("INSERT INTO users (username, email, password) VALUES (:inputusername, :inputemail, :inputpassword)",{
 		'inputusername':inputusername, 'inputemail': inputemail, 'inputpassword':inputpassword
 		})
 	db.commit()
 	return render_template('index.html', issue="Registered Successfully!", result='success')
+
+@app.route("/login", methods=['POST'])
+def login():
+	"""Fetching all the Inputs"""
+	loginusername = request.form.get('loginusername')
+	loginpassword = request.form.get('loginpassword')
+
+	"""Checking User Exists or Not"""
+	record_exist = db.execute('SELECT * FROM users WHERE username = :loginusername AND password = :loginpassword', {'loginusername':loginusername, 'loginpassword': loginpassword}).fetchone()
+	if record_exist is None:
+		return "Invalid Username/Password!"
+
+	return "Login Successful!"
+
+
+
+
+
+
