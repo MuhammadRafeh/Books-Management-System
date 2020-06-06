@@ -128,13 +128,16 @@ def book(no):
 			return render_template('error.html', error = 'Entered Id is Incorrect!')
 
 		"""Checking if user has already reviewed it or not"""
-		review = db.execute("SELECT * FROM reviews WHERE users_id = :users_id AND books_id = :books_id",{'users_id': session['user'][0], 'books_id': no}).fetchone()
-		if review is None:
+		reviewed = db.execute("SELECT * FROM reviews WHERE users_id = :users_id AND books_id = :books_id",{'users_id': session['user'][0], 'books_id': no}).fetchone()
+		if reviewed is None:
 			flag = True
 		else:
 			flag = False
 
-		return render_template('book.html', book=book, flag=flag)
+		"""Taking another people reviews to display on page"""
+		reviews = db.execute("SELECT username, rating, review FROM reviews JOIN users ON users.id = reviews.users_id WHERE books_id = :books_id", {'books_id': no}).fetchall()
+
+		return render_template('book.html', book=book, flag=flag, reviews=reviews)
 		"""Collecting review about that book"""
 		#reviews = db.execute("SELECT * FROM reviews WHERE books_id = :id",{'id':no}).fetchall()
 
