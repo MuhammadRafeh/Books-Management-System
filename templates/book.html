@@ -1,0 +1,105 @@
+{% extends "layout.html" %}
+
+{% block title %}
+	BookPage
+{% endblock %}
+
+{% block body %}
+<div class="container">
+	<h1 style="margin-top: 25px;">{{book.title}}</h1><br><br>
+	<h2 style="margin-left: 187px;">Details:</h2>
+	<ul>
+		<li>Isbn: {{book.isbn}}</li>
+		<li>Title: {{book.title}}</li>
+		<li>Author: {{book.author}}</li>
+		<li>Year: {{book.year}}</li>
+	</ul>
+
+	<h2 class="headcenter">Want to give a Review!</h2>
+
+	<form action="{{url_for('book', no=book.id)}}" method="post">
+		<div class="row">
+			<div class="col-3">
+				<div class="star-rating">
+				  <input type="radio" id="5-stars" name="rating" value="5" />
+				  <label for="5-stars" class="star">&#9733;</label>
+				  <input type="radio" id="4-stars" name="rating" value="4" />
+				  <label for="4-stars" class="star">&#9733;</label>
+				  <input type="radio" id="3-stars" name="rating" value="3" />
+				  <label for="3-stars" class="star">&#9733;</label>
+				  <input type="radio" id="2-stars" name="rating" value="2" />
+				  <label for="2-stars" class="star">&#9733;</label>
+				  <input type="radio" id="1-star" name="rating" value="1" />
+				  <label for="1-star" class="star">&#9733;</label>
+				</div>
+			</div>
+			<div class="col-3">
+				{% if flag %}
+					<textarea id="text" name="review" rows="4" cols="50" placeholder="Write Something!" required=""></textarea>
+				{% else %}
+					<label style="margin-left: 25px;">You can't submit review Again!</label>
+				{% endif %}
+			</div>
+
+			<div class="col-3">
+				{% if flag %}
+					<button type="submit" class="btn btn-primary" style="margin-left: 300px;">submit</button>
+				{% else %}
+					<button type="submit" class="btn btn-primary" style="margin-left: 300px;" disabled>submit</button>
+				{% endif %}
+			</div>
+		</div>
+	</form>
+
+	<h2 class="headcenter" style="margin-top: 70px;">People Reviews!</h2>
+
+	<div class="row">
+		{% for review in reviews %}
+			<div class="col-3">
+				{{review.username}}
+			</div>
+
+			<div class="col-3">
+				{% for rating in range(review.rating) %}
+					<span class="fa fa-star checked"></span>
+				{% endfor %}
+				{% for unrate in range(5-review.rating) %}
+					<span class="fa fa-star"></span>
+				{% endfor %}
+
+			</div>
+
+			<div class="col-6">
+				{{review.review}}
+			</div>
+		{% endfor %}
+
+	</div>
+
+	<h2 class="headcenter" style="margin-top: 59px;">Goodreads Review!</h2>
+
+	<div class="row">
+
+		<div class="col-6" style="text-align: center;">
+			<span style="font-weight: bold;">Average Rating</span>
+		</div>
+
+		<div class="col-6" style="text-align: center;">
+			<span style="font-weight: bold;">No of Ratings</span>
+		</div>
+
+		<div class="col-6" style="text-align: center;">
+			{{goodratings[0]}}	
+		</div>
+
+		<div class="col-6" style="text-align: center;">
+			{{goodratings[1]}}
+		</div>
+
+	</div>
+
+</div>
+
+
+
+{% endblock %}
