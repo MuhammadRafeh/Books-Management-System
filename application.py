@@ -137,9 +137,15 @@ def book(no):
 		"""Taking another people reviews to display on page"""
 		reviews = db.execute("SELECT username, rating, review FROM reviews JOIN users ON users.id = reviews.users_id WHERE books_id = :books_id", {'books_id': no}).fetchall()
 
-		return render_template('book.html', book=book, flag=flag, reviews=reviews)
-		"""Collecting review about that book"""
-		#reviews = db.execute("SELECT * FROM reviews WHERE books_id = :id",{'id':no}).fetchall()
+		"""Using API to get Goodreads Reviews"""
+		res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": "am79tEwwV9gqV6uXm5SA", "isbns": book.isbn})
+		dic = res.json()
+
+		"""0 index showing average_rating, 1 shows reviews count"""
+		goodratings = [dic['books'][0]['average_rating'], dic['books'][0]['ratings_count']]
+
+		return render_template('book.html', book=book, flag=flag, reviews=reviews, goodratings=goodratings)
+		
 
 	else:
 		rating = request.form.get('rating')
