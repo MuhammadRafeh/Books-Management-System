@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, session, render_template, request
+from flask import Flask, session, render_template, request, redirect, url_for
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -24,7 +24,9 @@ db = scoped_session(sessionmaker(bind=engine))
 
 @app.route("/")
 def index():
-    return render_template('index.html')
+	if "user" in session:
+		return redirect(url_for('login'))
+	return render_template('index.html')
 
 @app.route("/registration", methods=['POST'])
 def register():
@@ -41,9 +43,9 @@ def register():
 	"""Handling Email Section"""
 	email_exist = db.execute('SELECT * FROM users WHERE email = :inputemail',{'inputemail':inputemail}).fetchone()
 	if not(email_exist is None):
-		return render_template('index.html', issue="Email Already Exists!", result="unsuccess")
+		return render_template('index.html', issue="Email Already Exists! Just Login Below", result="unsuccess")
 	else:
-		req = requests.get(f'https://app.verify-email.org/api/v1/UpNGc6mUVeKLPL8d2wR66dRI60Xz27Q0eJlchtqzKAO1ffil8g/verify/{inputemail}')
+		req = requests.get('https://app.verify-email.org/api/v1/UpNGc6mUVeKLPL8d2wR66dRI60Xz27Q0eJlchtqzKAO1ffil8g/verify/{}'.format(inputemail))
 		result = req.json()
 		if result['status']!=1: #If equal to 1 it's mean that Email is ok/exists
 			return render_template("index.html", issue='Invalid Email Address!', result="unsuccess")
@@ -55,18 +57,97 @@ def register():
 	db.commit()
 	return render_template('index.html', issue="Registered Successfully!", result='success')
 
-@app.route("/login", methods=['POST'])
+@app.route("/login", methods=['POST', 'GET'])
 def login():
-	"""Fetching all the Inputs"""
-	loginusername = request.form.get('loginusername')
-	loginpassword = request.form.get('loginpassword')
+	if request.method=='POST':
+		"""Fetching all the Inputs"""
+		loginusername = request.form.get('loginusername')
+		loginpassword = request.form.get('loginpassword')
 
-	"""Checking User Exists or Not"""
-	record_exist = db.execute('SELECT * FROM users WHERE username = :loginusername AND password = :loginpassword', {'loginusername':loginusername, 'loginpassword': loginpassword}).fetchone()
-	if record_exist is None:
-		return "Invalid Username/Password!"
+		"""Checking User Exists or Not"""
+		record_exist = db.execute('SELECT * FROM users WHERE username = :loginusername AND password = :loginpassword', {'loginusername':loginusername, 'loginpassword': loginpassword}).fetchone()
+		if record_exist is None:
+			#return "Invalid Username/Password!"
+			return render_template('index.html', issue='Invalid Username/Password!', result='unsuccess')
 
-	return "Login Successful!"
+		"""Storing current logged in user into the session"""
+		session["user"] = []
+		session["user"].append(record_exist.id)
+		session["user"].append(record_exist.username)
+		return render_template('search.html', user=session['user'])
+
+	else:
+		if 'user' in session:
+			return render_template('search.html', user=session['user'])
+		return redirect(url_for('index'))
+
+@app.route('/logout')
+def logout():
+	session.pop('user')
+	return redirect(url_for('index'))
+
+@app.route('/search', methods=['POST','GET'])
+def search():
+	if request.method=='POST':
+		"""Fetching all the Inputs"""
+		isbn = request.form.get('isbn')
+		title = request.form.get('title')
+		author = request.form.get('author')
+		#info = db.execute("SELECT * FROM books WHERE author = :author",{'author':author}).fetchall()
+
+		if request.args.get("f") == 'f1':
+			data = db.execute("SELECT * FROM books WHERE isbn = :isbn",{'isbn':isbn}).fetchall()
+
+		elif request.args.get("f") == 'f2':
+			data = db.execute("SELECT * FROM books WHERE title = :title",{'title':title}).fetchall()
+
+		elif request.args.get("f") == 'f3':
+			data = db.execute("SELECT * FROM books WHERE author = :author",{'author':author}).fetchall()
+
+		elif request.args.get("f") == 'f4':
+			if (author is not None and title is not None and author is not None):
+				data = db.execute("SELECT * FROM books WHERE (title = :title AND isbn = :isbn) AND (author = :author)",{'title':title, 'isbn':isbn,'author':author}).fetchall()
+			else:
+				data = 'incomplete'
+
+		return render_template('searched.html', data=data)
+
+	else:
+		return redirect(url_for('login'))
+
+@app.route('/book/<int:no>', methods=['GET', 'POST'])
+def book(no):
+	if request.method=='GET':
+		if 'user' not in session:
+			return redirect(url_for('login'))
+		"""Collecting only 1 book data"""
+		book = db.execute("SELECT * FROM books WHERE id = :id",{'id':no}).fetchone()
+
+		"""Checking if enter book is valid or not"""
+		if book is None:
+			return render_template('error.html', error = 'Entered Id is Incorrect!')
+
+		"""Checking if user has already reviewed it or not"""
+		review = db.execute("SELECT * FROM reviews WHERE users_id = :users_id AND books_id = :books_id",{'users_id': session['user'][0], 'books_id': no}).fetchone()
+		if review is None:
+			flag = True
+		else:
+			flag = False
+
+		return render_template('book.html', book=book, flag=flag)
+		"""Collecting review about that book"""
+		#reviews = db.execute("SELECT * FROM reviews WHERE books_id = :id",{'id':no}).fetchall()
+
+	else:
+		rating = request.form.get('rating')
+		print(rating)
+		if rating is None:
+			rating = 1
+		review = request.form.get('review')
+		db.execute("INSERT INTO reviews (users_id, books_id, rating, review) VALUES (:users_id, :books_id, :rating, :review)", {'users_id': session['user'][0], 'books_id': no, 'rating' : int(rating), 'review': review})
+		db.commit()
+		return redirect(url_for('book', no=no))
+
 
 
 
