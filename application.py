@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, session, render_template, request, redirect, url_for
+from flask import Flask, session, render_template, request, redirect, url_for, abort, jsonify
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -117,10 +117,12 @@ def search():
 
 @app.route('/book/<int:no>', methods=['GET', 'POST'])
 def book(no):
-	if request.method=='GET':
-		if 'user' not in session:
+	if 'user' not in session:
 			return redirect(url_for('login'))
-		"""Collecting only 1 book data"""
+
+	if request.method=='GET':
+
+		"""Collecting only 1 book data whose id is no"""
 		book = db.execute("SELECT * FROM books WHERE id = :id",{'id':no}).fetchone()
 
 		"""Checking if enter book is valid or not"""
@@ -149,7 +151,6 @@ def book(no):
 
 	else:
 		rating = request.form.get('rating')
-		print(rating)
 		if rating is None:
 			rating = 1
 		review = request.form.get('review')
@@ -158,8 +159,27 @@ def book(no):
 		return redirect(url_for('book', no=no))
 
 
+@app.route('/api/<string:isbn>')
+def api(isbn):
 
+	"""Fetching Book"""
+	book = db.execute("SELECT * FROM books WHERE isbn = :isbn", {'isbn':isbn}).fetchone()
 
+	"""Checking if book is Available or Not"""
+	if book is None:
+		return abort(404)
+
+	"""Calculating review counts and average score"""
+	cal = db.execute("SELECT COUNT(*), AVG(rating) FROM reviews WHERE books_id = :books_id", {'books_id': book.id}).fetchall()
+
+	return jsonify({
+		"title": book.title,
+    	"author": book.author,
+    	"year": book.year,
+    	"isbn": book.isbn,
+    	"review_count": cal[0].count,
+    	"average_score": float(cal[0].avg)
+		})
 
 
 
