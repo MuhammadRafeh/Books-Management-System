@@ -172,14 +172,24 @@ def api(isbn):
 	"""Calculating review counts and average score"""
 	cal = db.execute("SELECT COUNT(*), AVG(rating) FROM reviews WHERE books_id = :books_id", {'books_id': book.id}).fetchall()
 
-	return jsonify({
-		"title": book.title,
-    	"author": book.author,
-    	"year": book.year,
-    	"isbn": book.isbn,
-    	"review_count": cal[0].count,
-    	"average_score": float(cal[0].avg)
-		})
+	try:
+		return jsonify({
+			"title": book.title,
+	    	"author": book.author,
+	    	"year": book.year,
+	    	"isbn": book.isbn,
+	    	"review_count": cal[0].count,
+	    	"average_score": float(cal[0].avg)
+			})
+	except Exception:
+		return jsonify({
+			"title": book.title,
+	    	"author": book.author,
+	    	"year": book.year,
+	    	"isbn": book.isbn,
+	    	"review_count": cal[0].count,
+	    	"average_score": 0
+			})
 
 
 
